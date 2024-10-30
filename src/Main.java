@@ -1,12 +1,11 @@
-
 import java.util.*;
-
 
 public class Main {
     public static final Map<Integer, Integer> sizeToFreq = new HashMap<>();
 
     public static void main(String[] args) throws InterruptedException {
         List<Thread> threads = new ArrayList<>();
+
         for (int i = 0; i < 1000; i++) {
             Thread thread = new Thread(() -> {
                 synchronized (sizeToFreq) {
@@ -20,29 +19,54 @@ public class Main {
                         times = 1;
                     }
                     sizeToFreq.put(count, times);
-                    System.out.println(sizeToFreq);
+                    sizeToFreq.notify();
                 }
             });
             thread.start();
             threads.add(thread);
         }
 
+        Thread thread1 = new Thread(() -> {
+            while (!Thread.interrupted()) {
+                synchronized (sizeToFreq) {
+                    try {
+                        sizeToFreq.wait();
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                    maxRepeats();
+                }
+            }
+        });
+        thread1.start();
+
         for (Thread thr : threads) {
             thr.join();
         }
 
-        Map.Entry<Integer, Integer> maxMap = sizeToFreq.entrySet()
-                .stream()
-                .max(Map.Entry.comparingByValue())
-                .get();
+        thread1.interrupt();
 
-        System.out.printf("Самое частое количество повторений %d (встретилось %d раз)\n", maxMap.getKey(), maxMap.getValue());
+        Map.Entry<Integer, Integer> maxMap = maxRepeats();
+        otherRepeats(maxMap);
+    }
+
+    private static void otherRepeats(Map.Entry<Integer, Integer> maxMap) {
         System.out.println("Другие размеры:");
         for (Map.Entry<Integer, Integer> map : sizeToFreq.entrySet()) {
             if (map.getKey() != maxMap.getKey()) {
                 System.out.printf("- %d (%d раз)\n", map.getKey(), map.getValue());
             }
         }
+    }
+
+    private static Map.Entry<Integer, Integer> maxRepeats() {
+        Map.Entry<Integer, Integer> maxMap = sizeToFreq.entrySet()
+                .stream()
+                .max(Map.Entry.comparingByValue())
+                .get();
+
+        System.out.printf("Самое частое количество повторений %d (встретилось %d раз)\n", maxMap.getKey(), maxMap.getValue());
+        return maxMap;
     }
 
     public static String generateRoute(String letters, int length) {
