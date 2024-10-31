@@ -8,16 +8,17 @@ public class Main {
 
         for (int i = 0; i < 1000; i++) {
             Thread thread = new Thread(() -> {
+
+                int times;
+                String text = generateRoute("RLRFR", 100);
+                int count = (int) text.chars().filter(ch -> ch == 'R').count();
+                System.out.println(text + " " + count);
+                if (sizeToFreq.containsKey(count)) {
+                    times = sizeToFreq.get(count) + 1;
+                } else {
+                    times = 1;
+                }
                 synchronized (sizeToFreq) {
-                    int times;
-                    String text = generateRoute("RLRFR", 100);
-                    int count = (int) text.chars().filter(ch -> ch == 'R').count();
-                    System.out.println(text + " " + count);
-                    if (sizeToFreq.containsKey(count)) {
-                        times = sizeToFreq.get(count) + 1;
-                    } else {
-                        times = 1;
-                    }
                     sizeToFreq.put(count, times);
                     sizeToFreq.notify();
                 }
