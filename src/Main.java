@@ -4,29 +4,6 @@ public class Main {
     public static final Map<Integer, Integer> sizeToFreq = new HashMap<>();
 
     public static void main(String[] args) throws InterruptedException {
-        List<Thread> threads = new ArrayList<>();
-
-        for (int i = 0; i < 1000; i++) {
-            Thread thread = new Thread(() -> {
-
-                int times;
-                String text = generateRoute("RLRFR", 100);
-                int count = (int) text.chars().filter(ch -> ch == 'R').count();
-                System.out.println(text + " " + count);
-                if (sizeToFreq.containsKey(count)) {
-                    times = sizeToFreq.get(count) + 1;
-                } else {
-                    times = 1;
-                }
-                synchronized (sizeToFreq) {
-                    sizeToFreq.put(count, times);
-                    sizeToFreq.notify();
-                }
-            });
-            thread.start();
-            threads.add(thread);
-        }
-
         Thread thread1 = new Thread(() -> {
             while (!Thread.interrupted()) {
                 synchronized (sizeToFreq) {
@@ -41,8 +18,22 @@ public class Main {
         });
         thread1.start();
 
-        for (Thread thr : threads) {
-            thr.join();
+        for (int i = 0; i < 1000; i++) {
+            new Thread(() -> {
+                int times;
+                String text = generateRoute("RLRFR", 100);
+                int count = (int) text.chars().filter(ch -> ch == 'R').count();
+                System.out.println(text + " " + count);
+                if (sizeToFreq.containsKey(count)) {
+                    times = sizeToFreq.get(count) + 1;
+                } else {
+                    times = 1;
+                }
+                synchronized (sizeToFreq) {
+                    sizeToFreq.put(count, times);
+                    sizeToFreq.notify();
+                }
+            }).start();
         }
 
         thread1.interrupt();
